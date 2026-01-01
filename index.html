@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yo Jitu! | Solid Dosti</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            /* Image ke exact colours */
+            --bg-dark: #050508;
+            --deep-purple: #2a0a3d;
+            --deep-blue: #0a1a2f;
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ff;
+            --grid-color: rgba(255, 255, 255, 0.03); /* Soft squares */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+
+        body {
+            background-color: var(--bg-dark);
+            /* Linear gradient for color blending like your image */
+            background-image: 
+                linear-gradient(135deg, var(--deep-blue) 0%, var(--bg-dark) 40%, var(--deep-purple) 100%);
+            color: #e0e0e0;
+            overflow-x: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* The Grid/Squares Overlay */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px; /* Square size */
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Glow effect in corner */
+        body::after {
+            content: "";
+            position: absolute;
+            bottom: -10%;
+            right: -10%;
+            width: 50%;
+            height: 50%;
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .section { 
+            display: none; 
+            width: 100%; 
+            max-width: 450px; 
+            padding: 20px; 
+            text-align: center; 
+            animation: fadeIn 0.6s ease-out;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        .glass-card {
+            background: rgba(10, 10, 15, 0.7);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            border-radius: 24px;
+            padding: 35px 25px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(12px);
+        }
+
+        h1 { font-size: 2.8rem; margin-bottom: 15px; color: var(--neon-blue); text-shadow: 0 0 15px rgba(0, 243, 255, 0.4); }
+        p { font-size: 1.1rem; line-height: 1.5; margin-bottom: 25px; color: #ccc; }
+
+        .btn {
+            background: linear-gradient(45deg, var(--neon-pink), #b000ff);
+            border: none;
+            color: white;
+            padding: 14px 32px;
+            font-size: 1.1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(255, 0, 255, 0.3);
+        }
+
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px var(--neon-pink); }
+
+        /* Memory Game Styles */
+        .game-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
+        
+        .card {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .card.flipped { background: var(--neon-blue); transform: rotateY(180deg); color: #000; }
+        .card.matched { background: #00ff88; border-color: #00ff88; transform: scale(0.9); opacity: 0.6; pointer-events: none; }
+        .card .emoji { display: none; }
+        .card.flipped .emoji, .card.matched .emoji { display: block; }
+
+        #music-control { 
+            position: fixed; bottom: 20px; left: 20px; z-index: 100; 
+            background: rgba(255,255,255,0.1); width: 45px; height: 45px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; cursor: pointer; border: 1px solid var(--neon-blue);
+        }
+
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-17.mp3" type="audio/mpeg">
+    </audio>
+    <div id="music-control" onclick="toggleMusic()">🎵</div>
+
+    <div id="intro" class="section active">
+        <div class="glass-card">
+            <h1>YO JITU! 😎</h1>
+            <p>Ye special surprise maine tere liye banaya hai, bhai!</p>
+            <p>Taiyaar ho ja bro, yaadein, masti aur humari solid dosti ka full dose aane wala hai! 🔥</p>
+            <button class="btn" onclick="startApp()">Shuru Kar Bro! 🚀</button>
+        </div>
+    </div>
+
+    <div id="game-section" class="section">
+        <div class="glass-card">
+            <h2 style="color: var(--neon-blue); margin-bottom:10px;">Jitu Memory Challenge 😏</h2>
+            <div style="margin-bottom:15px; font-size:0.9rem;">Moves: <span id="moves" style="color:var(--neon-pink); font-weight:bold;">0</span></div>
+            <div class="game-grid" id="grid"></div>
+            <p id="game-msg" style="display:none; color: #00ff88; font-weight:bold;"></p>
+        </div>
+    </div>
+
+    <div id="msg1" class="section">
+        <div class="glass-card">
+            <h1 style="font-size: 4rem;">💪🔥</h1>
+            <p>Jitu bhai, tu dunia ka sabse solid dost hai yaar! 🔥</p>
+            <button class="btn" onclick="nextSection('msg2')">Sahi Hai! 🤜</button>
+        </div>
+    </div>
+
+    <div id="msg2" class="section">
+        <div class="glass-card">
+            <h1 style="font-size: 4rem;">😈👊</h1>
+            <p>Har hasi, har ladai, har paagalpan mein tu saath tha bro... Tu mera crime partner aur backup hai! 😎</p>
+            <button class="btn" onclick="nextSection('final')">Aage Chal.. 🍻</button>
+        </div>
+    </div>
+
+    <div id="final" class="section">
+        <div class="glass-card">
+            <h1>TU NO.1 HAI BHAI! 👑</h1>
+            <p id="bubble-msg" style="color: #00ff88; font-weight: bold; display: none; background: rgba(0,255,136,0.1); padding: 10px; border-radius: 8px;">Wha! abb to tu bubble ko bhi jeet jayega 🏆</p>
+            <p style="margin-top:20px;">Jitu – tu mera bhai hai, legend hai, aur hamesha rahega! ❤️</p>
+            <button class="btn" onclick="celebrate()">Dosti Celebrate Kar Bro! 🍻</button>
+        </div>
+    </div>
+
+    <script>
+        let musicStarted = false;
+        const bgMusic = document.getElementById('bgMusic');
+
+        function toggleMusic() {
+            if (bgMusic.paused) { bgMusic.play(); } 
+            else { bgMusic.pause(); }
+        }
+
+        function startApp() {
+            if(!musicStarted) {
+                bgMusic.play().catch(e => console.log("Music click required"));
+                musicStarted = true;
+            }
+            nextSection('game-section');
+            initGame();
+        }
+
+        function nextSection(id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        // Game Logic
+        const emojis = ['😂','😎','😭','👽','👺','🌚'];
+        let cards = [...emojis, ...emojis];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+
+        function initGame() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            cards.sort(() => Math.random() - 0.5);
+            
+            cards.forEach(emoji => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.dataset.emoji = emoji;
+                card.innerHTML = `<span class="emoji">${emoji}</span>`;
+                card.addEventListener('click', flipCard);
+                grid.appendChild(card);
+            });
+        }
+
+        function flipCard() {
+            if (this.classList.contains('flipped') || flippedCards.length === 2) return;
+            this.classList.add('flipped');
+            flippedCards.push(this);
+            if (flippedCards.length === 2) {
+                moves++;
+                document.getElementById('moves').innerText = moves;
+                setTimeout(checkMatch, 600);
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            if (card1.dataset.emoji === card2.dataset.emoji) {
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                matchedPairs++;
+                if (matchedPairs === emojis.length) {
+                    document.getElementById('bubble-msg').style.display = 'block';
+                    setTimeout(() => nextSection('msg1'), 1500);
+                }
+            } else {
+                card1.classList.remove('flipped');
+                card2.classList.remove('flipped');
+            }
+            flippedCards = [];
+        }
+
+        function celebrate() {
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        }
+    </script>
+</body>
+</html>
